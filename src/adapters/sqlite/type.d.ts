@@ -19,6 +19,7 @@ export type SQLiteAdapterOptions = $Exact<{
   migrations?: SchemaMigrations
   // The new way to run the database in synchronous mode.
   jsi?: boolean
+  passphrase?: string
   migrationEvents?: MigrationEvents
   // Called when database failed to set up (initialize) correctly. It's possible that
   // it's some transient error that will be solved by a reload, but it's
