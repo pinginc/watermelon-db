@@ -15,15 +15,10 @@ static constexpr char SQLITE_HEADER[16] = {
 };
 static constexpr size_t SQLITE_HEADER_SIZE = 16;
 
-static bool fileExists(const std::string &path) {
-    std::ifstream f(path, std::ios::binary);
-    return f.good();
-}
-
 static bool isPlaintextSqlite(const std::string &path) {
     std::ifstream file(path, std::ios::binary);
-    if (!file.is_open()) {
-        return false;
+    if (!file.good()) {
+        return false;  // File doesn't exist or can't be opened
     }
     char header[SQLITE_HEADER_SIZE];
     file.read(header, SQLITE_HEADER_SIZE);
@@ -63,7 +58,7 @@ SqliteDb::SqliteDb(std::string path, const char *password) {
 #ifdef SQLITE_HAS_CODEC
     const bool encryptionEnabled = (password != nullptr && std::strlen(password) > 0);
 
-    if (encryptionEnabled && fileExists(resolvedPath) && isPlaintextSqlite(resolvedPath)) {
+    if (encryptionEnabled && isPlaintextSqlite(resolvedPath)) {
         consoleLog("Detected plaintext SQLite DB while encryption is enabled. Wiping: " + resolvedPath);
         wipeDbFiles(resolvedPath);
     }
