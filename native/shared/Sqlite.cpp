@@ -1,11 +1,45 @@
 #include "Sqlite.h"
 #include "DatabasePlatform.h"
 #include <cassert>
+#include <fstream>
+#include <cstdio>
+#include <cstring>
 
 namespace watermelondb {
 
 using platform::consoleError;
 using platform::consoleLog;
+
+static constexpr char SQLITE_HEADER[16] = {
+    'S','Q','L','i','t','e',' ','f','o','r','m','a','t',' ','3','\0'
+};
+static constexpr size_t SQLITE_HEADER_SIZE = 16;
+
+static bool fileExists(const std::string &path) {
+    std::ifstream f(path, std::ios::binary);
+    return f.good();
+}
+
+static bool isPlaintextSqlite(const std::string &path) {
+    std::ifstream file(path, std::ios::binary);
+    if (!file.is_open()) {
+        return false;
+    }
+    char header[SQLITE_HEADER_SIZE];
+    file.read(header, SQLITE_HEADER_SIZE);
+    if (file.gcount() < static_cast<std::streamsize>(SQLITE_HEADER_SIZE)) {
+        return false;
+    }
+    return std::memcmp(header, SQLITE_HEADER, SQLITE_HEADER_SIZE) == 0;
+}
+
+static void wipeDbFiles(const std::string &path) {
+    consoleLog("Wiping plaintext database files at: " + path);
+    std::remove(path.c_str());
+    std::remove((path + "-wal").c_str());
+    std::remove((path + "-shm").c_str());
+    consoleLog("Plaintext database files wiped");
+}
 
 std::string resolveDatabasePath(std::string path) {
     if (path == "" || path == ":memory:" || path.rfind("file:", 0) == 0 || path.rfind("/", 0) == 0) {
@@ -25,6 +59,16 @@ SqliteDb::SqliteDb(std::string path, const char *password) {
 #endif
 
     auto resolvedPath = resolveDatabasePath(path);
+
+#ifdef SQLITE_HAS_CODEC
+    const bool encryptionEnabled = (password != nullptr && std::strlen(password) > 0);
+
+    if (encryptionEnabled && fileExists(resolvedPath) && isPlaintextSqlite(resolvedPath)) {
+        consoleLog("Detected plaintext SQLite DB while encryption is enabled. Wiping: " + resolvedPath);
+        wipeDbFiles(resolvedPath);
+    }
+#endif
+
     int openResult = sqlite3_open(resolvedPath.c_str(), &sqlite);
 
     if (openResult != SQLITE_OK) {
