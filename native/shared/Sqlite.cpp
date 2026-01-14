@@ -78,7 +78,6 @@ SqliteDb::SqliteDb(std::string path, const char *password) {
     assert(sqlite != nullptr);
 #ifdef SQLITE_HAS_CODEC
     if (password != nullptr && strlen(password) > 0) {
-        consoleLog("##### Will set key...");
         sqlite3_key(sqlite, password, (int)strlen(password));
         int rc = sqlite3_exec(sqlite, "SELECT count(*) FROM sqlite_master;", NULL, NULL, NULL);
         if (rc != SQLITE_OK) {
@@ -87,7 +86,6 @@ SqliteDb::SqliteDb(std::string path, const char *password) {
             sqlite = nullptr;
             throw new std::runtime_error("Failed to open encrypted database - " + std::string(sqlite3_errmsg(sqlite)));
         }
-        consoleLog("##### Key set!");
     }
 #endif
     assert(sqlite != nullptr);
