@@ -81,10 +81,11 @@ SqliteDb::SqliteDb(std::string path, const char *password) {
         sqlite3_key(sqlite, password, (int)strlen(password));
         int rc = sqlite3_exec(sqlite, "SELECT count(*) FROM sqlite_master;", NULL, NULL, NULL);
         if (rc != SQLITE_OK) {
-            consoleError("Failed to open encrypted database - " + std::string(sqlite3_errmsg(sqlite)));
+            auto error = std::string(sqlite3_errmsg(sqlite));
+            consoleError("Failed to open encrypted database - " + error);
             sqlite3_close(sqlite);
             sqlite = nullptr;
-            throw new std::runtime_error("Failed to open encrypted database - " + std::string(sqlite3_errmsg(sqlite)));
+            throw std::runtime_error("Failed to open encrypted database - " + error);
         }
     }
 #endif
