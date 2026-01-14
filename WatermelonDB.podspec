@@ -11,7 +11,7 @@ Pod::Spec.new do |s|
   s.license      = package["license"]
   s.author       = { "author" => package["author"] }
   s.platforms    = { :ios => "12.0", :tvos => "12.0" }
-  s.source = { :git => "https://github.com/Nozbe/WatermelonDB.git", :tag => "v#{s.version}" }
+  s.source = { :git => "https://github.com/pinginc/watermelon-db.git", :tag => "v#{s.version}" }
   s.source_files = "native/ios/**/*.{h,m,mm,swift,c,cpp}", "native/shared/**/*.{h,c,cpp}"
   s.public_header_files = [
     # FIXME: I don't think we should be exporting all headers as public
