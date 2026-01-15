@@ -35,7 +35,6 @@
     "postinstall": "patch-package"
   },
   "types": "src/index.d.ts",
-  "author": "@Nozbe",
   "homepage": "https://github.com/pinginc/watermelon-db#readme",
   "bugs": "https://github.com/pinginc/watermelon-db/issues",
   "license": "MIT",

@@ -24,6 +24,20 @@
   </a>
 </p>
 
+---
+
+## Fork Notice
+
+This is a fork of [WatermelonDB](https://github.com/Nozbe/WatermelonDB) created by [Nozbe](https://github.com/Nozbe).
+
+**Original Project:** https://github.com/Nozbe/WatermelonDB  
+**Original Author:** [Radek Pietruszewski](https://github.com/radex) and [contributors](https://github.com/Nozbe/WatermelonDB/graphs/contributors)  
+**License:** MIT License - Copyright (c) Nozbe
+
+This fork maintains the original MIT License. See the [LICENSE](./LICENSE) file for full license text.
+
+---
+
 |   | WatermelonDB |
 | - | ------------ |
 | ⚡️ | **Launch your app instantly** no matter how much data you have |
