@@ -1,7 +1,7 @@
 {
   "name": "@timebyping/watermelondb",
   "description": "Build powerful React Native and React web apps that scale from hundreds to tens of thousands of records and remain fast",
-  "version": "0.30.0",
+  "version": "0.30.1",
   "engines": {
     "node": ">=18"
   },
