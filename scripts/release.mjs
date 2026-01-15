@@ -164,7 +164,7 @@ const buildTasks = (options) => {
           done: (otp) =>
             execa('npm', [
               'publish',
-              `./dist/pinginc-watermelondb-v${version}.tgz`,
+              `./dist/timebyping-watermelondb-v${version}.tgz`,
               `--otp=${otp}`,
               '--tag',
               tag,
