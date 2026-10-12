@@ -25,6 +25,9 @@ std::string resolveDatabasePath(std::string path);
 // Throws an exception if it's not possible to delete this file
 void deleteDatabaseFile(std::string path, bool warnIfDoesNotExist);
 
+// Marks the database file and its -wal/-shm siblings as excluded from device backups
+void excludeFromBackup(std::string path);
+
 // Calls function when device memory is getting low
 void onMemoryAlert(std::function<void(void)> callback);
 

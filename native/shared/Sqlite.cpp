@@ -29,12 +29,37 @@ static bool isPlaintextSqlite(const std::string &path) {
 }
 
 static void wipeDbFiles(const std::string &path) {
-    consoleLog("Wiping plaintext database files at: " + path);
+    consoleLog("Wiping database files at: " + path);
     std::remove(path.c_str());
     std::remove((path + "-wal").c_str());
     std::remove((path + "-shm").c_str());
-    consoleLog("Plaintext database files wiped");
+    consoleLog("Database files wiped");
 }
+
+static sqlite3 *openDatabase(const std::string &path) {
+    sqlite3 *db = nullptr;
+    int openResult = sqlite3_open(path.c_str(), &db);
+
+    if (openResult != SQLITE_OK) {
+        if (db) {
+            auto error = std::string(sqlite3_errmsg(db));
+            sqlite3_close(db);
+            throw std::runtime_error("Error while trying to open database - " + error);
+        } else {
+            // whoa, sqlite couldn't allocate memory
+            throw std::runtime_error("Error while trying to open database, sqlite is null - " + std::to_string(openResult));
+        }
+    }
+    assert(db != nullptr);
+    return db;
+}
+
+#ifdef SQLITE_HAS_CODEC
+static int keyDatabase(sqlite3 *db, const char *password) {
+    sqlite3_key(db, password, (int)strlen(password));
+    return sqlite3_exec(db, "SELECT count(*) FROM sqlite_master;", NULL, NULL, NULL);
+}
+#endif
 
 std::string resolveDatabasePath(std::string path) {
     if (path == "" || path == ":memory:" || path.rfind("file:", 0) == 0 || path.rfind("/", 0) == 0) {
@@ -46,14 +71,14 @@ std::string resolveDatabasePath(std::string path) {
     }
 }
 
-SqliteDb::SqliteDb(std::string path, const char *password) {
+SqliteDb::SqliteDb(std::string path, const char *password, bool wipeOnPassphraseMismatch) {
     consoleLog("Will open database...");
     platform::initializeSqlite();
 #ifndef ANDROID
     assert(sqlite3_threadsafe());
 #endif
 
-    auto resolvedPath = resolveDatabasePath(path);
+    resolvedPath = resolveDatabasePath(path);
 
 #ifdef SQLITE_HAS_CODEC
     const bool encryptionEnabled = (password != nullptr && std::strlen(password) > 0);
@@ -64,22 +89,18 @@ SqliteDb::SqliteDb(std::string path, const char *password) {
     }
 #endif
 
-    int openResult = sqlite3_open(resolvedPath.c_str(), &sqlite);
+    sqlite = openDatabase(resolvedPath);
 
-    if (openResult != SQLITE_OK) {
-        if (sqlite) {
-            auto error = std::string(sqlite3_errmsg(sqlite));
-            throw new std::runtime_error("Error while trying to open database - " + error);
-        } else {
-            // whoa, sqlite couldn't allocate memory
-            throw new std::runtime_error("Error while trying to open database, sqlite is null - " + std::to_string(openResult));
-        }
-    }
-    assert(sqlite != nullptr);
 #ifdef SQLITE_HAS_CODEC
-    if (password != nullptr && strlen(password) > 0) {
-        sqlite3_key(sqlite, password, (int)strlen(password));
-        int rc = sqlite3_exec(sqlite, "SELECT count(*) FROM sqlite_master;", NULL, NULL, NULL);
+    if (encryptionEnabled) {
+        int rc = keyDatabase(sqlite, password);
+        if (rc == SQLITE_NOTADB && wipeOnPassphraseMismatch) {
+            consoleError("Encrypted database does not match the passphrase. Wiping: " + resolvedPath);
+            sqlite3_close(sqlite);
+            wipeDbFiles(resolvedPath);
+            sqlite = openDatabase(resolvedPath);
+            rc = keyDatabase(sqlite, password);
+        }
         if (rc != SQLITE_OK) {
             auto error = std::string(sqlite3_errmsg(sqlite));
             consoleError("Failed to open encrypted database - " + error);

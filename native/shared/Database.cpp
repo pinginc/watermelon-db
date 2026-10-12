@@ -5,9 +5,9 @@ namespace watermelondb {
 using platform::consoleError;
 using platform::consoleLog;
 
-Database::Database(jsi::Runtime *runtime, std::string path, std::string password, bool usesExclusiveLocking)
+Database::Database(jsi::Runtime *runtime, std::string path, std::string password, bool wipeOnPassphraseMismatch, bool usesExclusiveLocking)
 : runtime_(runtime), mutex_() {
-    db_ = std::make_unique<SqliteDb>(path, password.c_str());
+    db_ = std::make_unique<SqliteDb>(path, password.c_str(), wipeOnPassphraseMismatch);
 
     std::string initSql = "";
 
@@ -38,6 +38,12 @@ Database::Database(jsi::Runtime *runtime, std::string path, std::string password
     }
 
     executeMultiple(initSql);
+
+    if (!password.empty()) {
+        // A fresh database gets its -wal/-shm on the first read, not on the WAL pragma
+        executeMultiple("pragma user_version;");
+        platform::excludeFromBackup(db_->resolvedPath);
+    }
 }
 
 void Database::destroy() {
