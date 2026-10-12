@@ -7,17 +7,23 @@ namespace watermelondb {
 using platform::consoleError;
 using platform::consoleLog;
 
+static constexpr unsigned int LEGACY_CREATE_ADAPTER_ARG_COUNT = 3;
+static constexpr unsigned int CREATE_ADAPTER_ARG_COUNT = 4;
+
 void Database::install(jsi::Runtime *runtime) {
     jsi::Runtime &rt = *runtime;
     auto globalObject = rt.global();
-    createMethod(rt, globalObject, "nativeWatermelonCreateAdapter", 3, [runtime](jsi::Runtime &rt, const jsi::Value *args) {
+    createMethod(rt, globalObject, "nativeWatermelonCreateAdapter", LEGACY_CREATE_ADAPTER_ARG_COUNT, CREATE_ADAPTER_ARG_COUNT, [runtime](jsi::Runtime &rt, const jsi::Value *args, size_t count) {
         std::string dbPath = args[0].getString(rt).utf8(rt);
         std::string password = args[1].getString(rt).utf8(rt);
-        bool usesExclusiveLocking = args[2].getBool();
+        // A JS bundle older than this binary omits the wipe flag
+        bool isLegacyCall = count == LEGACY_CREATE_ADAPTER_ARG_COUNT;
+        bool wipeOnPassphraseMismatch = !isLegacyCall && args[2].getBool();
+        bool usesExclusiveLocking = args[isLegacyCall ? 2 : 3].getBool();
 
         jsi::Object adapter(rt);
 
-        std::shared_ptr<Database> database = std::make_shared<Database>(runtime, dbPath, password, usesExclusiveLocking);
+        std::shared_ptr<Database> database = std::make_shared<Database>(runtime, dbPath, password, wipeOnPassphraseMismatch, usesExclusiveLocking);
         adapter.setProperty(rt, "database", jsi::Object::createFromHostObject(rt, database));
 
         // FIXME: Important hack!

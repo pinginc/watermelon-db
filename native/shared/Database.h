@@ -26,7 +26,7 @@ namespace watermelondb {
 class Database : public jsi::HostObject {
     public:
     static void install(jsi::Runtime *runtime);
-    Database(jsi::Runtime *runtime, std::string path, std::string password, bool usesExclusiveLocking);
+    Database(jsi::Runtime *runtime, std::string path, std::string password, bool wipeOnPassphraseMismatch, bool usesExclusiveLocking);
     ~Database();
     void destroy();
 
@@ -45,7 +45,7 @@ class Database : public jsi::HostObject {
 
     private:
     bool initialized_;
-    bool isDestroyed_;
+    bool isDestroyed_ = false;
     std::mutex mutex_;
     jsi::Runtime *runtime_; // TODO: std::shared_ptr would be better, but I don't know how to make it from void* in RCTCxxBridge
     std::unique_ptr<SqliteDb> db_;

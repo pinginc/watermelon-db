@@ -66,6 +66,8 @@ export default class SQLiteAdapter implements DatabaseAdapter {
 
   _initPromise: Promise<void>
 
+  _onDatabaseCreated: ?() => void
+
   constructor(options: SQLiteAdapterOptions): void {
     // console.log(`---> Initializing new adapter (${this._tag})`)
     const {
@@ -76,11 +78,14 @@ export default class SQLiteAdapter implements DatabaseAdapter {
       usesExclusiveLocking = false,
       experimentalUnsafeNativeReuse = false,
       passphrase = null,
+      wipeOnPassphraseMismatch = false,
+      onDatabaseCreated,
     } = options
     this.schema = schema
     this.migrations = migrations
     this._migrationEvents = migrationEvents
     this.passphrase = passphrase
+    this._onDatabaseCreated = onDatabaseCreated
     this.dbName = this._getName(dbName)
     this._dispatcherType = getDispatcherType(options)
     // Hacky-ish way to create an object with NativeModule-like shape, but that can dispatch method
@@ -89,6 +94,7 @@ export default class SQLiteAdapter implements DatabaseAdapter {
       usesExclusiveLocking,
       experimentalUnsafeNativeReuse,
       password: this.passphrase ?? '',
+      wipeOnPassphraseMismatch,
     })
 
     if (process.env.NODE_ENV !== 'production') {
@@ -209,6 +215,11 @@ export default class SQLiteAdapter implements DatabaseAdapter {
       (result) => {
         if (!result.error) {
           logger.log(`[SQLite] Schema set up successfully`)
+          try {
+            this._onDatabaseCreated?.()
+          } catch (error) {
+            logger.error('[SQLite] onDatabaseCreated failed', error)
+          }
         }
         callback(result)
       },

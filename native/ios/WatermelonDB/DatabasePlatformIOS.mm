@@ -97,6 +97,20 @@ void deleteSyncJson(int id) {
     [providedSyncJsons removeObjectForKey: @(id)];
 }
 
+void excludeFromBackup(std::string path) {
+    NSString *basePath = [NSString stringWithUTF8String:path.c_str()];
+    for (NSString *suffix in @[@"", @"-wal", @"-shm"]) {
+        NSString *filePath = [basePath stringByAppendingString:suffix];
+        if (![NSFileManager.defaultManager fileExistsAtPath:filePath]) {
+            continue;
+        }
+        NSError *err = nil;
+        if (![[NSURL fileURLWithPath:filePath] setResourceValue:@YES forKey:NSURLIsExcludedFromBackupKey error:&err]) {
+            NSLog(@"Error: Failed to exclude %@ from backup: %@", filePath, err);
+        }
+    }
+}
+
 void onDestroy(std::function<void()> callback) {
     [NSNotificationCenter.defaultCenter addObserverForName:RCTBridgeWillReloadNotification
                                                     object:nil
