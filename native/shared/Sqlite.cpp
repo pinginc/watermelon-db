@@ -33,6 +33,7 @@ static void wipeDbFiles(const std::string &path) {
     std::remove(path.c_str());
     std::remove((path + "-wal").c_str());
     std::remove((path + "-shm").c_str());
+    std::remove((path + "-journal").c_str());
     consoleLog("Database files wiped");
 }
 
