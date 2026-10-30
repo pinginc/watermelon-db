@@ -14,6 +14,8 @@ import type {
 
 const { WMDatabaseBridge, WMDatabaseJSIBridge } = NativeModules
 
+const LEGACY_CREATE_ADAPTER_ARITY = 3
+
 class SqliteNativeModulesDispatcher implements SqliteDispatcher {
   _tag: ConnectionTag
   _unsafeNativeReuse: boolean
@@ -61,8 +63,21 @@ class SqliteJsiDispatcher implements SqliteDispatcher {
   _db: any
   _unsafeErrorListener: (Error) => void // debug hook for NT use
 
-  constructor(dbName: string, { usesExclusiveLocking, password }: SqliteDispatcherOptions): void {
-    this._db = global.nativeWatermelonCreateAdapter(dbName, password ?? '', usesExclusiveLocking)
+  constructor(
+    dbName: string,
+    { usesExclusiveLocking, password, wipeOnPassphraseMismatch }: SqliteDispatcherOptions,
+  ): void {
+    const createAdapter = global.nativeWatermelonCreateAdapter
+    // JS can ship over the air ahead of the native binary, which may predate the wipe argument
+    this._db =
+      createAdapter.length === LEGACY_CREATE_ADAPTER_ARITY
+        ? createAdapter(dbName, password ?? '', usesExclusiveLocking)
+        : createAdapter(
+            dbName,
+            password ?? '',
+            wipeOnPassphraseMismatch ?? false,
+            usesExclusiveLocking,
+          )
     this._unsafeErrorListener = () => {}
   }
 

@@ -64,6 +64,9 @@ void deleteSyncJson(int id) {
     // TODO: Unimplemented
 }
 
+void excludeFromBackup(std::string path) {
+}
+
 void onDestroy(std::function<void(void)> callback) {
     // TODO: Unimplemented
 }

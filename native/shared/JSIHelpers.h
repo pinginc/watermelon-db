@@ -40,13 +40,17 @@ jsi::Value runBlock(facebook::jsi::Runtime &rt, std::function<jsi::Value(void)> 
 }
 
 using jsiFunction = std::function<jsi::Value(jsi::Runtime &rt, const jsi::Value *args)>;
+using jsiFunctionWithCount = std::function<jsi::Value(jsi::Runtime &rt, const jsi::Value *args, size_t count)>;
 
-void createMethod(jsi::Runtime &runtime, jsi::Object &object, const char *methodName, unsigned int argCount, jsiFunction func) {
+void createMethod(jsi::Runtime &runtime, jsi::Object &object, const char *methodName, unsigned int minArgCount, unsigned int maxArgCount, jsiFunctionWithCount func) {
     jsi::PropNameID name = jsi::PropNameID::forAscii(runtime, methodName);
-    jsi::Function function = jsi::Function::createFromHostFunction(runtime, name, argCount, [methodName, argCount, func]
+    jsi::Function function = jsi::Function::createFromHostFunction(runtime, name, maxArgCount, [methodName, minArgCount, maxArgCount, func]
                                                                    (jsi::Runtime &rt, const jsi::Value &, const jsi::Value *args, size_t count) {
-        if (count != argCount) {
-            std::string error = std::string(methodName) + " takes " + std::to_string(argCount) + " arguments";
+        if (count < minArgCount || count > maxArgCount) {
+            std::string expected = minArgCount == maxArgCount
+                ? std::to_string(maxArgCount)
+                : std::to_string(minArgCount) + "-" + std::to_string(maxArgCount);
+            std::string error = std::string(methodName) + " takes " + expected + " arguments";
             #ifdef ANDROID
             consoleError(error);
             std::abort();
@@ -55,10 +59,15 @@ void createMethod(jsi::Runtime &runtime, jsi::Object &object, const char *method
             #endif
         }
         return runBlock(rt, [&]() {
-            return func(rt, args);
+            return func(rt, args, count);
         });
     });
     object.setProperty(runtime, name, function);
 }
 
+void createMethod(jsi::Runtime &runtime, jsi::Object &object, const char *methodName, unsigned int argCount, jsiFunction func) {
+    createMethod(runtime, object, methodName, argCount, argCount, [func](jsi::Runtime &rt, const jsi::Value *args, size_t) {
+        return func(rt, args);
+    });
+}
 }

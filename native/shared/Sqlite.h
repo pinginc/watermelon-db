@@ -12,17 +12,18 @@ namespace watermelondb {
 // Lightweight wrapper for handling sqlite3 lifetime
 class SqliteDb {
     public:
-    SqliteDb(std::string path, const char *password);
+    SqliteDb(std::string path, const char *password, bool wipeOnPassphraseMismatch);
     ~SqliteDb();
     void destroy();
 
     sqlite3 *sqlite;
+    std::string resolvedPath;
 
     SqliteDb &operator=(const SqliteDb &) = delete;
     SqliteDb(const SqliteDb &) = delete;
 
     private:
-    bool isDestroyed_;
+    bool isDestroyed_ = false;
 };
 
 class SqliteStatement {

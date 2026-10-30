@@ -209,6 +209,10 @@ void destroy() {
     destroyListeners.clear();
 }
 
+void excludeFromBackup(std::string path) {
+    // Backup rules live in the host app's manifest
+}
+
 void onDestroy(std::function<void()> callback) {
     destroyListeners.push_back(callback);
 }
